@@ -1,3 +1,6 @@
+<img width="1672" height="941" alt="ChatGPT Image May 29, 2026, 10_58_17 PM" src="https://github.com/user-attachments/assets/3f832cfd-81a4-478d-a96b-3122579f3431" />
+
+
 # Homelab Infrastructure
 
 This repository documents my hybrid homelab focused on virtualization, monitoring, disaster recovery, networking, security, and automation.
