@@ -297,3 +297,186 @@ Purpose:
 * ensure service availability after host reboot
 * align startup behavior with UbuntuServer1
 
+-----------------------------------------------------------------------
+
+# Homelab Change Log – Homarr Deployment and Homepage Retirement Plan
+
+**Date:** 2026-05-30
+
+## Summary
+
+Implemented Homarr as the new primary homelab dashboard platform on UbuntuServer1. Homarr is intended to replace the existing Homepage deployment due to easier management, a modern interface, drag-and-drop configuration, and better integration capabilities.
+
+## Changes Implemented
+
+### Homarr Installation
+
+**Host:** UbuntuServer1
+**IP Address:** 10.0.0.42
+
+Homarr was deployed as a Docker container using Docker Compose.
+
+**Directory:**
+
+```text
+~/homarr
+```
+
+**Access URL:**
+
+```text
+http://10.0.0.42:7575
+```
+
+### Configuration Notes
+
+* Generated and configured a valid `SECRET_ENCRYPTION_KEY`.
+* Resolved startup failure caused by missing environment variable.
+* Verified container startup and successful web interface access.
+* Created initial Homarr board:
+
+```text
+Jakes_Homelab
+```
+
+## Dashboard Organization
+
+Current planned dashboard structure:
+
+### Infrastructure
+
+* Proxmox
+* UbuntuServer1
+* CorpDC
+* Syslog Server
+
+### Monitoring
+
+* Grafana
+* Wazuh Dashboard
+* Netdata
+
+### Network
+
+* Xfinity Gateway
+* TP-Link Switch
+* Enterprise AP
+* Tailscale
+
+### Backups
+
+* PBS1
+* PBS2
+
+### Media
+
+* Jellyfin
+* Plex
+
+### Security
+
+* Bitwarden Vault
+* Wazuh
+
+### Management
+
+* Proxmox
+* Webmin
+* Windows Admin Center
+
+### AI
+
+* AI.Assistant
+* Ollama
+* Telegram Bot
+
+## Windows Admin Center Deployment
+
+Windows Admin Center was installed on CorpDC.
+
+**Server:**
+
+```text
+CorpDC
+10.0.0.45
+```
+
+### Access URL
+
+```text
+https://10.0.0.45:6600
+```
+
+### Notes
+
+* Initial installation completed successfully.
+* Windows Admin Center services verified running.
+* Firewall rule manually created for TCP port 6600.
+* Browser-based management of Windows Server 2025 confirmed operational.
+* Future goal is to evaluate moving Windows Admin Center to TCP 443.
+
+## Tailscale Status
+
+Windows Admin Center is currently accessible via LAN.
+
+Remote access through Tailscale is not currently functional because Tailscale is not connected/configured on CorpDC.
+
+### Planned Actions
+
+* Install or reconnect Tailscale on CorpDC.
+* Verify Tailscale connectivity from Admin Laptop.
+* Test Windows Admin Center using CorpDC Tailscale IP.
+* Create permanent firewall rules if required.
+
+## Homepage Retirement Plan
+
+Homepage remains installed but is planned for decommissioning.
+
+### Reasons for Migration
+
+* Excessive YAML configuration requirements.
+* Higher maintenance burden.
+* Less intuitive management workflow.
+* Homarr provides a GUI-driven management experience.
+* Better long-term scalability for homelab growth.
+
+### Retirement Criteria
+
+Homepage will be removed after:
+
+1. All services have been recreated in Homarr.
+2. Dashboard layout is finalized.
+3. Management URLs have been verified.
+4. Remote access testing is completed.
+5. Homarr is designated as the primary browser homepage.
+
+### Planned Removal Procedure
+
+1. Verify Homarr configuration backup.
+2. Stop Homepage container.
+3. Confirm no services depend on Homepage configuration.
+4. Remove Homepage Docker container.
+5. Archive Homepage configuration files.
+6. Update homelab documentation.
+
+## Current State
+
+Status: In Progress
+
+### Operational
+
+* Homarr
+* Windows Admin Center
+* Webmin
+* Proxmox
+* Wazuh
+* Grafana
+* Jellyfin
+* Plex
+
+### Pending
+
+* Complete Homarr dashboard population.
+* Configure CorpDC Tailscale connectivity.
+* Validate remote Windows Admin Center access.
+* Remove Homepage deployment.
