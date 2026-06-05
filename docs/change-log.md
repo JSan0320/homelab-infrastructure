@@ -450,6 +450,282 @@ Homepage will be removed after:
 4. Remote access testing is completed.
 5. Homarr is designated as the primary browser homepage.
 
+______________________________________________________________________________________________________________
+
+#June 4, 2026
+
+## Summary
+
+Several issues were discovered and resolved prior to leaving for vacation. These included backup interruptions caused by a power outage, deployment of UPS protection, PBS1 recovery, and troubleshooting a Tailscale failure on CorpDC.
+
+---
+
+## Infrastructure Changes
+
+### UPS Deployment
+
+Installed UPS protection for critical infrastructure.
+
+Protected devices:
+
+* PowerEdge T320 (Proxmox Host)
+* PowerEdge T320 (CorpDC / Windows Server 2025)
+* PBS1 (OptiPlex Proxmox Backup Server)
+* Network switch
+* Xfinity gateway/router
+
+Purpose:
+
+* Prevent backup interruptions during short power outages.
+* Maintain remote access during brief utility interruptions.
+* Protect infrastructure from unexpected shutdowns.
+
+---
+
+## CorpDC Tailscale Failure
+
+### Symptoms
+
+CorpDC disappeared from the Tailscale dashboard.
+
+Observed behavior:
+
+```powershell
+tailscale status
+```
+
+Returned:
+
+```text
+Tailscale is starting. Please wait.
+unexpected state: NoState
+```
+
+Additional behavior:
+
+```text
+You are logged out.
+The last login error was:
+fetch control key: Get "https://controlplane.tailscale.com/key?v=138": context canceled
+```
+
+The server had:
+
+* Working internet connectivity
+* Working DNS resolution
+* Correct time synchronization
+* Running Tailscale service
+
+Despite this, Tailscale never obtained an IP address.
+
+---
+
+### Troubleshooting Performed
+
+Verified:
+
+* Internet connectivity via ping
+* DNS functionality via nslookup
+* NTP synchronization
+* Tailscale service status
+* Tailscale adapter status
+* Control plane connectivity
+* Tailscale authentication
+
+Results:
+
+* Network healthy
+* DNS healthy
+* AD healthy
+* DHCP healthy
+* Tailscale service running
+* Tailscale tunnel adapter present
+
+Issue isolated to local Tailscale installation/state.
+
+---
+
+### Resolution
+
+Removed Tailscale from CorpDC using Windows Admin Center.
+
+Observed:
+
+* Tailscale service removed successfully.
+* Uninstall process temporarily hung.
+* Windows Installer (msiexec) eventually completed.
+* Rebooted CorpDC.
+
+Installed fresh copy of Tailscale.
+
+Verification:
+
+```powershell
+tailscale status
+tailscale ip -4
+```
+
+Successful result:
+
+```text
+corpdc
+100.120.40.4
+```
+
+Node rejoined tailnet successfully.
+
+---
+
+### Final State
+
+Tailscale operational.
+
+CorpDC details:
+
+* Hostname: corpdc
+* LAN IP: 10.0.0.45
+* Tailscale IP: 100.120.40.4
+
+Confirmed:
+
+* Windows Admin Center accessible
+* Tailscale operational
+* DNS operational
+* DHCP operational
+* Active Directory operational
+
+Services verified:
+
+```powershell
+Get-Service DNS,DHCPServer,NTDS
+```
+
+All services running.
+
+---
+
+## Admin Laptop Changes
+
+### Hostname Change
+
+Changed Ubuntu admin laptop hostname.
+
+Old hostname:
+
+* darknet
+
+New hostname:
+
+* AdminLaptop
+
+Commands used:
+
+```bash
+sudo hostnamectl set-hostname AdminLaptop
+```
+
+Updated:
+
+```text
+/etc/hosts
+```
+
+Reboot completed successfully.
+
+---
+
+### Brave Browser Issue
+
+After hostname change, Brave browser reported:
+
+```text
+Profile appears to be in use by another Brave process on another computer.
+```
+
+Issue determined to be profile locking related to Chromium profile state.
+
+No additional infrastructure impact observed.
+
+---
+
+## Backup Status
+
+### VM102 (Ubuntu.Server)
+
+Backup target:
+
+* optiplex-pbs-4tb
+
+Protected disks:
+
+* 500 GB system disk
+* 2 TB data disk
+* 2 TB data disk
+
+Total protected size:
+
+* Approximately 4.1 TiB
+
+Observations:
+
+* Backup resumed successfully after previous interruption.
+* Dirty bitmaps were invalidated and rebuilt.
+* Full scan required.
+* No backup errors observed.
+
+Progress at last check:
+
+* 51%
+* 7 hours 2 minutes elapsed
+
+Estimated completion:
+
+* Approximately 14 hours total
+
+---
+
+## Pre-Vacation Status
+
+Verified operational:
+
+* CorpDC
+* Proxmox Host
+* UbuntuServer1
+* PBS1
+* PBS2
+* Tailscale
+* DNS
+* DHCP
+* Active Directory
+
+Remote access methods available:
+
+* Tailscale direct to CorpDC
+* Tailscale direct to UbuntuServer1
+* SSH to UbuntuServer1
+* Windows Admin Center
+* RDP to CorpDC
+
+Fallback remote access path:
+
+Laptop
+→ Tailscale
+→ UbuntuServer1
+→ CorpDC (LAN access)
+
+This provides continued management access even if CorpDC Tailscale fails in the future.
+
+---
+
+## Lessons Learned
+
+1. Critical infrastructure should be protected by UPS.
+2. Multiple Tailscale-connected devices provide redundancy.
+3. Hidden failures (such as Tailscale NoState) may go unnoticed until remote access is needed.
+4. Validate remote access before extended travel.
+5. Maintain change documentation after major infrastructure modifications.
+
+
 ### Planned Removal Procedure
 
 1. Verify Homarr configuration backup.
