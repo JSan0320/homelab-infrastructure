@@ -451,8 +451,7 @@ Homepage will be removed after:
 5. Homarr is designated as the primary browser homepage.
 
 ______________________________________________________________________________________________________________
-
-#June 4, 2026
+# June 4, 2026
 
 ## Summary
 
