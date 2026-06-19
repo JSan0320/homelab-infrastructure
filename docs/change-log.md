@@ -4,6 +4,60 @@ This document tracks major infrastructure changes, deployments, upgrades, and ar
 
 ---
 
+# June 19 2026
+
+### Implemented Scheduled Telegram Infrastructure Reporting
+
+Deployed automated daily infrastructure reports via Telegram at 8:00 AM and 8:00 PM Central Time.
+
+Added:
+- Morning report (8:00 AM CDT / 13:00 UTC)
+- Evening report (8:00 PM CDT / 01:00 UTC)
+- Proxmox node health (CPU, RAM, disk, uptime)
+- VM summary with resource utilization
+- PBS backup status and datastore usage
+- Reachability checks for critical infrastructure
+- Abnormal resource usage detection
+
+Configured:
+- Hermes cron jobs with persistent scheduling
+- Telegram Bot API delivery to home channel
+- Graceful handling of missing Sys.Audit permissions
+
+Script:
+- `~/.hermes/scripts/homelab_daily_report.py`
+
+---
+
+### Implemented Bidirectional Email Monitoring
+
+Deployed 30-minute email polling for incoming messages from `jsanford0320@outlook.com`.
+
+Features:
+- IMAP/SMTP via Gmail app password
+- Processes unread emails, sends replies
+- Telegram relay on demand (regex trigger detection)
+- Deduplication via processed UID tracking (`~/.hermes/data/processed_emails.json`)
+- Silent on success, alerts on errors
+- Uses `no_agent=true` watchdog mode for efficiency
+
+Script:
+- `~/.hermes/scripts/email_monitor.py`
+
+---
+
+### Fixed Proxmox Node Metrics Query
+
+Updated homelab report script to handle Sys.Audit permission limitations gracefully.
+
+Changes:
+- Added fallback to `/nodes/{node}/status` endpoint
+- Displays "unavailable (need Sys.Audit perm on node)" instead of 0% values
+- VM metrics continue working (sufficient permissions)
+- Ready for real metrics once token permissions are updated
+
+---
+
 # 2026
 
 ## May 27 2026
