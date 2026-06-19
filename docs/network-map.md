@@ -12,8 +12,9 @@ The environment uses a hybrid network design combining:
 - wired infrastructure
 - VLAN segmentation
 - enterprise wireless
-- remote access overlay networking
-- monitoring visibility
+- remote access overlay networking (Tailscale)
+- dedicated backup network
+- monitoring visibility via port mirroring
 
 ---
 
@@ -21,122 +22,75 @@ The environment uses a hybrid network design combining:
 
 | Device | IP | Purpose |
 |---|---|---|
-| Xfinity Gateway | 10.0.0.1 | Internet gateway/router |
-| Managed Switch | 10.0.0.254 | Core switching/VLANs |
-| Proxmox VE Host | 10.0.0.46 | Virtualization host |
-| UbuntuServer1 | 10.0.0.42 | Linux services VM |
-| CorpDC | 10.0.0.45 | Windows AD/DNS/DHCP |
-| PBS1 | 10.0.0.30 | Local backup server |
-| Raspberry Pi IDS | 10.0.0.170 | IDS / Bettercap |
-| Gaming PC | 10.0.0.152 | Primary desktop |
-| Laptop | 10.0.0.213 | Administrative workstation |
-
----
-
-# Wireless Infrastructure
-
-## Enterprise Access Point
-
-The lab uses an enterprise-grade AP providing:
-- primary internal SSID
-- isolated guest wireless network
-- VLAN-backed guest access
-
-This allows:
-- guest device isolation
-- internal resource protection
-- realistic enterprise wireless segmentation
+| Xfinity Gateway | 10.0.0.1 | Internet gateway |
+| Enterprise AP | 10.0.0.2 | Dual SSID wireless (Main + Guest) |
+| Dell Proxmox VE Host | 10.0.0.46 | Primary virtualization host |
+| UbuntuServer1 (VM 102) | 10.0.0.42 | Core Linux services |
+| CorpDC | 10.0.0.45 | Windows Server 2025 — AD, DNS, DHCP |
+| Hermes-Agent / Mara (VM 100) | 10.0.0.105 | Primary AI operations assistant |
+| PBS1 | 10.0.0.30 | Local Proxmox Backup Server |
+| OPNsense | 10.0.0.110 | VPN router / firewall |
+| Raspberry Pi IDS | 10.0.0.170 | Bettercap IDS / traffic monitoring |
+| Managed Switch (IronGateSwitch1) | 10.0.0.254 | Core switch — VLANs, QoS, port mirroring |
 
 ---
 
 # VLAN Design
 
-The environment uses VLAN segmentation for:
-- guest wireless traffic
-- management separation
-- monitoring visibility
-- future security expansion
+| VLAN ID | Name | Purpose | Ports |
+|---|---|---|---|
+| VLAN 1 | Internal | Trusted infrastructure — all lab hosts | Ports 1–7 |
+| VLAN 10 | Guest | Isolated guest wireless traffic | Port 8 |
 
-## Current VLAN Concepts
+## Switch Configuration (TP-Link TL-SG608E — IronGateSwitch1)
 
-| VLAN Purpose | Description |
+| Port | Assignment | Notes |
+|---|---|---|
+| Port 1–7 | VLAN 1 (Internal) | All lab infrastructure |
+| Port 3 | Mirrored → Kali / AdminLaptop | Wireshark / passive capture |
+| Port 4 | QoS High Priority | Gaming PC |
+| Port 8 | VLAN 10 (Guest) | AP guest SSID uplink |
+
+---
+
+# Wireless Infrastructure
+
+## Enterprise Access Point — 10.0.0.2
+
+| SSID | VLAN | Access |
+|---|---|---|
+| Main (internal) | VLAN 1 | Full LAN access |
+| Guest | VLAN 10 | Internet only, isolated from LAN |
+
+---
+
+# Dedicated Backup Network
+
+An isolated NIC-to-NIC link carries PBS backup traffic, keeping it off the production LAN.
+
+| Device | Interface | IP |
+|---|---|---|
+| Dell Proxmox VE | Backup NIC | 192.168.50.1 |
+| PBS1 | Backup NIC | 192.168.50.2 |
+
+Subnet: `192.168.50.0/24`
+
+---
+
+# Tailscale Mesh (Remote Access Overlay)
+
+| Device | Tailscale IP |
 |---|---|
-| Main LAN | Trusted internal systems |
-| Guest VLAN | Isolated guest wireless traffic |
-| Management Network | Infrastructure administration |
-| Monitoring Visibility | IDS and mirrored traffic |
+| UbuntuServer1 | 100.100.121.22 |
+| Gaming PC | 100.95.22.15 |
+| Raspberry Pi IDS | 100.71.77.1 |
+| CorpDC | 100.120.40.4 |
+| PBS2 (offsite) | 100.98.162.11 |
 
----
-
-# IDS / Traffic Monitoring
-
-The Raspberry Pi IDS receives mirrored traffic from the managed switch.
-
-## IDS Features
-
-- Bettercap-based monitoring
-- traffic inspection
-- network visibility
-- security experimentation
-- DNS monitoring
-- traffic analysis
-
-## Switch Features Used
-
-- Port mirroring
-- VLAN support
-- QoS
-
----
-
-# Remote Access Architecture
-
-Remote access uses:
-
-```text
-Tailscale
-```
-
-This provides:
-- encrypted remote connectivity
-- offsite PBS communication
-- remote management access
-- disaster recovery access
-
----
-
-# Offsite Infrastructure
-
-## Parents House Infrastructure
-
-Current offsite systems:
-- OpenWrt router
-- PBS2
-- Tailscale connectivity
-
-Future planned additions:
-- Proxmox warm-site host
-- restore-ready disaster recovery environment
-
----
-
-# Backup Network
-
-A dedicated backup network exists between:
-- Proxmox VE host
-- PBS1
-
-## Backup Subnet
-
-| Device | IP |
-|---|---|
-| Proxmox Backup NIC | 192.168.50.1 |
-| PBS1 Backup NIC | 192.168.50.2 |
-
-Purpose:
-- isolated backup traffic
-- improved backup performance
-- reduced LAN congestion
+Tailscale provides:
+- encrypted remote management access
+- offsite PBS1 → PBS2 backup replication
+- admin access to CorpDC and UbuntuServer1 from anywhere
 
 ---
 
@@ -144,18 +98,32 @@ Purpose:
 
 ## Internal DNS
 
-Provided by:
-- CorpDC (Windows Server 2025)
+| Provider | Host | Scope |
+|---|---|---|
+| CorpDC (AD DNS) | 10.0.0.45 | `corp.local` resolution, AD services |
+| Pi-hole | 10.0.0.42 | DNS filtering, ad blocking, DNS analytics |
 
-Functions:
-- Active Directory DNS
-- internal hostname resolution
-- domain services
+---
 
-## DNS Filtering
+# IDS / Traffic Monitoring
 
-Additional DNS visibility/filtering provided by:
-- Pi-hole
+The Raspberry Pi IDS (10.0.0.170) receives mirrored traffic from port 3 of the managed switch.
+
+**Bettercap modules active:** `net.recon`, `net.probe`, `net.sniff`
+
+Logs are synced to UbuntuServer1 → Grafana Alloy → Loki → Grafana dashboards.
+
+---
+
+# Offsite Infrastructure
+
+| Device | Location | IP |
+|---|---|---|
+| PBS2 | Offsite (parents' house) | 100.98.162.11 (Tailscale) |
+| OpenWrt Router | Offsite | Remote routing + Tailscale |
+
+Future planned additions:
+- Small Proxmox warm-site host for VM restoration
 
 ---
 
@@ -164,33 +132,39 @@ Additional DNS visibility/filtering provided by:
 ```text
 Internet
    |
-Xfinity Gateway
+Xfinity Gateway (10.0.0.1)
    |
-Managed Switch
+OPNsense VPN Router (10.0.0.110)
    |
-+----------------------------+
-| Main LAN / VLANs           |
-+----------------------------+
+TL-SG608E Managed Switch (10.0.0.254)
    |
-   +---- Proxmox VE Host
-   |       +---- UbuntuServer1
-   |       +---- AI Assistant VM
+   +---- VLAN 1 (Internal LAN 10.0.0.0/24)
+   |       |
+   |       +---- Dell Proxmox VE (10.0.0.46)
+   |       |       +---- VM 100: Hermes-Agent/Mara (10.0.0.105)
+   |       |       +---- VM 101: Windows11Edu
+   |       |       +---- VM 102: UbuntuServer1 (10.0.0.42)
+   |       |       +---- VM 103: Ai.Assistant
+   |       |
+   |       +---- CorpDC (10.0.0.45)
+   |       +---- PBS1 (10.0.0.30)
+   |       +---- Raspberry Pi IDS (10.0.0.170)
+   |       +---- Enterprise AP (10.0.0.2)
+   |       +---- OPNsense (10.0.0.110)
    |
-   +---- CorpDC
-   |
-   +---- PBS1
-   |
-   +---- Enterprise AP
-   |
-   +---- Raspberry Pi IDS
-   |
-   +---- Pi-hole
+   +---- VLAN 10 (Guest — port 8)
+           |
+           +---- Guest wireless clients (isolated)
 
-PBS1
-   |
-Tailscale / Remote Connectivity
-   |
-PBS2 (Offsite)
+Backup Network (192.168.50.0/24) — isolated NIC-to-NIC
+   +---- Proxmox (192.168.50.1) <---> PBS1 (192.168.50.2)
+
+Tailscale Mesh (remote overlay)
+   +---- UbuntuServer1 (100.100.121.22)
+   +---- CorpDC (100.120.40.4)
+   +---- Pi IDS (100.71.77.1)
+   +---- Gaming PC (100.95.22.15)
+   +---- PBS2 offsite (100.98.162.11)
 ```
 
 ---
@@ -199,10 +173,9 @@ PBS2 (Offsite)
 
 The network is designed to provide:
 - realistic enterprise-style infrastructure
-- segmentation practice
+- VLAN segmentation and guest isolation
 - centralized services
-- remote access
-- monitoring visibility
-- backup reliability
-- disaster recovery capability
-- operational flexibility
+- encrypted remote access
+- monitoring visibility via port mirroring and NetFlow
+- isolated backup traffic
+- offsite disaster recovery connectivity

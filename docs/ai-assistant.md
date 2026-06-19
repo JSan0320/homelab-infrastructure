@@ -2,25 +2,116 @@
 
 ## Overview
 
-The AI Operations Assistant is a Telegram-based homelab monitoring bot running on a dedicated Ubuntu VM.
+The homelab runs two AI assistant systems with distinct roles:
 
-It provides mobile access to infrastructure status, Proxmox VM information, backup visibility, and automated daily reports.
+| System | VM | Role | Status |
+|---|---|---|---|
+| **Hermes-Agent (Mara)** | VM 100 | Primary AI ops assistant — scheduling, reporting, email, documentation | Active |
+| **Ai.Assistant (Legacy)** | VM 103 | Original Telegram bot + Ollama local LLM | Active (legacy) |
+
+---
+
+# Hermes-Agent (Mara) — Primary System
 
 ## Purpose
 
-The goal of this assistant is to make the homelab easier to monitor remotely without constantly logging into Proxmox, PBS, Grafana, or individual servers.
+Hermes-Agent is the primary AI operations assistant responsible for:
 
-## Technologies Used
+- Scheduled infrastructure reporting via Telegram
+- Email monitoring and bidirectional communication
+- GitHub documentation maintenance
+- Infrastructure data collection and analysis
+- Proxmox API and SSH-based metrics gathering
 
-- Ubuntu Server VM
-- Python
-- Python virtual environment
-- Telegram Bot API
-- Ollama
-- Local LLM: qwen2.5:1.5b
-- Proxmox API
-- systemd service
-- Proxmox Backup Server task data
+## VM Configuration
+
+| Item | Value |
+|---|---|
+| VM Name | Hermes-Agent |
+| VMID | 100 |
+| IP | 10.0.0.105 |
+| RAM | 8 GB |
+| CPU | 2 cores |
+| Platform | Ubuntu (Hermes AI Agent) |
+
+## Automated Jobs
+
+### Daily Infrastructure Reports
+
+Two scheduled Telegram reports delivered daily to the home channel:
+
+| Report | Schedule | Cron (UTC) |
+|---|---|---|
+| Morning Report | 8:00 AM CDT | `0 13 * * *` |
+| Evening Report | 8:00 PM CDT | `0 1 * * *` |
+
+**Report contents:**
+
+- Proxmox node status (Dell) — CPU, RAM, disk, uptime via SSH
+- VM summary — status, CPU, RAM, uptime for all VMs
+- PBS backup status and datastore usage
+- Reachability checks (Dell Proxmox, UbuntuServer1, PBS1, CorpDC)
+- Active warnings
+
+**Script:** `~/.hermes/scripts/homelab_daily_report.py`
+
+### Email Monitor
+
+Polls `mara.ai.assistant@gmail.com` every 30 minutes for messages from `jsanford0320@outlook.com`.
+
+- Replies via email automatically
+- Detects Telegram relay requests and sends Telegram messages
+- Tracks processed email UIDs to prevent duplicate processing
+
+**Script:** `~/.hermes/scripts/email_monitor.py`
+
+## Data Sources
+
+| Source | Method | Data Used |
+|---|---|---|
+| Proxmox API | HTTP (token auth) | VM inventory, VM CPU/RAM/uptime |
+| Proxmox host (Dell) | SSH (`ssh proxmox`) | Node CPU, RAM, disk, uptime |
+| PBS API | HTTP (token auth) | Backup tasks, datastore usage |
+| Ping checks | ICMP | Host reachability |
+| Gmail | IMAP/SMTP | Email monitoring and replies |
+| Telegram Bot API | HTTP | Telegram message delivery |
+
+## Node Metrics Collection (Hybrid Approach)
+
+Node-level metrics are collected via SSH using machine-readable commands:
+
+| Metric | Command |
+|---|---|
+| CPU | `awk '/^cpu /' /proc/stat` (two reads, 1s delta) |
+| RAM | `awk '/MemTotal\|MemAvailable/' /proc/meminfo` |
+| Disk | `df -B1 --output=size,used /` |
+| Uptime | `cut -d' ' -f1 /proc/uptime` |
+
+Proxmox API is used for VM inventory and VM resource stats.
+
+## Documentation Responsibility
+
+Hermes-Agent (Mara) is responsible for maintaining the GitHub repository:
+
+- Repository: `JSan0320/homelab-infrastructure`
+- Commits infrastructure changes, changelog entries, and documentation updates
+- Small updates do not require approval
+- Never commits credentials, secrets, or sensitive configuration
+
+## Security Principles
+
+- Read-only infrastructure monitoring by default
+- Credentials stored in local `.env` files — never committed to GitHub
+- No destructive actions without explicit approval
+- No VM restarts, config changes, or service modifications without approval
+
+---
+
+# Ai.Assistant (Legacy) — VM 103
+
+## Purpose
+
+The legacy Ai.Assistant VM provides the original Telegram bot with local LLM capabilities.
 
 ## VM Configuration
 
@@ -31,58 +122,24 @@ The goal of this assistant is to make the homelab easier to monitor remotely wit
 | RAM | 16 GB |
 | CPU | 4 cores |
 | Ballooning | Disabled |
-| Runtime | Python + Ollama |
-| Service Name | homelab-bot.service |
+| Service | homelab-bot.service (systemd) |
 
-## Current Commands
+## Technologies
+
+- Python Telegram Bot
+- Ollama (local LLM)
+- Model: `qwen2.5:1.5b`
+- Proxmox API integration
+
+## Commands
 
 | Command | Purpose |
 |---|---|
-| `/status` | Checks key infrastructure reachability |
-| `/vms` | Shows live Proxmox VM status |
-| `/checkbackups` | Shows recent backup task summary |
-
-## Daily Report
-
-The bot sends an automatic daily report at 8:00 AM Central Time.
-
-The report includes:
-
-- Proxmox node health
-- CPU usage
-- RAM usage
-- disk usage
-- uptime
-- reachability checks
-- VM status and resource usage
-- backup summary
-
-## Current Data Sources
-
-| Source | Data Used |
-|---|---|
-| Ping checks | Basic online/offline reachability |
-| Proxmox API | Node stats and VM status |
-| Proxmox task history | Backup task visibility |
-| Telegram API | Bot messaging |
-| Ollama | Local AI response generation |
-
-## Architecture
-
-```text
-Telegram
-   ↓
-Python Bot
-   ↓
-Proxmox API / Ping Checks / Backup Tasks
-   ↓
-Local Ollama LLM
-   ↓
-Telegram Response
+| `/status` | Infrastructure reachability check |
+| `/vms` | Live Proxmox VM status |
+| `/checkbackups` | Recent backup task summary |
 
 ## Service Management
-
-The bot runs as a persistent systemd service.
 
 ```bash
 sudo systemctl status homelab-bot
@@ -90,37 +147,34 @@ sudo systemctl restart homelab-bot
 journalctl -u homelab-bot -f
 ```
 
-## Design Principle
+---
 
-The assistant is designed so Python gathers facts first, then the AI summarizes or explains them.
+# Architecture
 
 ```text
-Python gathers real infrastructure data
-        ↓
-APIs and scripts verify truth
-        ↓
-AI summarizes results
-        ↓
-Telegram delivers the report
+Telegram (Jake)
+      |
+      +---> Hermes-Agent (VM 100) -------> Proxmox API
+      |           |                 -----> SSH (proxmox)
+      |           |                 -----> PBS API
+      |           |                 -----> Gmail IMAP/SMTP
+      |           |                 -----> GitHub (docs)
+      |           |
+      |           +---> Scheduled Reports (8 AM / 8 PM CDT)
+      |           +---> Email Monitor (every 30 min)
+      |
+      +---> Ai.Assistant (VM 103) -------> Proxmox API
+                  |                -----> Ollama (qwen2.5:1.5b)
+                  |
+                  +---> /status, /vms, /checkbackups
 ```
 
-This avoids hallucinations and keeps monitoring output grounded in real system data.
+---
 
-## Security Notes
+# Future Improvements
 
-- The Proxmox API token uses read-only permissions where possible.
-- Secrets are stored in a local `.env` file and are not committed to GitHub.
-- The bot currently focuses on read-only monitoring and reporting.
-- Write actions such as restarting VMs or changing services are intentionally avoided for safety.
-
-## Future Improvements
-
-Planned improvements include:
-
-- PBS datastore usage reporting
-- PBS2 offsite sync status reporting
-- Wazuh alert summaries
-- Grafana/Prometheus metric summaries
-- Telegram alerts for offline systems
-- disaster recovery status checks
-- optional controlled remediation actions
+- Wazuh alert summaries in daily reports
+- Grafana anomaly detection integration
+- PBS2 offsite sync status
+- Automated changelog generation from infrastructure changes
+- Alert escalation for critical failures

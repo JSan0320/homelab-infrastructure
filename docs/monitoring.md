@@ -16,40 +16,48 @@ The environment combines:
 - Grafana
 - Prometheus
 - Loki
+- Grafana Alloy
 - Wazuh
+- Netdata
 - goflow2
 - Bettercap IDS
-- Telegram AI reporting
+- Telegram AI reporting (Hermes-Agent)
 
 ---
 
 # Monitoring Architecture
 
 ```text
-Infrastructure Devices
-        ↓
-Exporters / Agents / Logs / Flows
-        ↓
-Prometheus / Loki / Wazuh / goflow2
-        ↓
+Infrastructure Devices (Proxmox, UbuntuServer1, PBS1, CorpDC, Pi IDS)
+        |
+Exporters / Agents / Syslog / NetFlow / IDS Logs
+        |
+        +---- Prometheus         (node_exporter metrics)
+        +---- Grafana Alloy      (log shipping, NetFlow, IDS logs → Loki)
+        +---- Wazuh Manager      (security events from 9 agents)
+        +---- goflow2            (NetFlow from softflowd on all hosts)
+        +---- Netdata            (real-time node metrics → Netdata Cloud)
+        |
 Grafana Dashboards
-        ↓
-Telegram AI Reporting
+        |
+Hermes-Agent Telegram Reports (8 AM / 8 PM CDT)
 ```
 
 ---
 
 # Core Monitoring Components
 
-| Tool | Purpose |
-|---|---|
-| Grafana | Dashboards and visualization |
-| Prometheus | Metrics collection |
-| Loki | Centralized log aggregation |
-| Wazuh | SIEM and security monitoring |
-| goflow2 | Network flow collection |
-| Bettercap IDS | Traffic monitoring and inspection |
-| Telegram AI Bot | Mobile monitoring and reporting |
+| Tool | Host | Purpose |
+|---|---|---|
+| Grafana | UbuntuServer1:3000 | Dashboards and visualization |
+| Prometheus | UbuntuServer1:9090 | Metrics collection and storage |
+| Loki | UbuntuServer1:3100 | Centralized log aggregation |
+| Grafana Alloy | UbuntuServer1 | Log/metric pipeline (NetFlow, IDS, syslog) |
+| Wazuh Manager | UbuntuServer1:55000 | SIEM and security monitoring |
+| Wazuh Dashboard | UbuntuServer1:443 | Security event visualization |
+| goflow2 | UbuntuServer1:2055/8080 | NetFlow collection and metrics |
+| Netdata | All nodes | Real-time node metrics (claimed to Netdata Cloud) |
+| Bettercap IDS | Pi IDS (10.0.0.170) | Passive traffic monitoring |
 
 ---
 
@@ -57,28 +65,19 @@ Telegram AI Reporting
 
 ## Purpose
 
-Grafana provides:
-- centralized dashboards
-- infrastructure visualization
-- performance trending
-- operational visibility
-
-## Current Uses
-
-- CPU usage monitoring
-- RAM usage monitoring
-- disk usage monitoring
-- VM visibility
-- PBS visibility
-- Prometheus visualization
-- infrastructure health visibility
+Grafana provides centralized dashboards for infrastructure visualization, performance trending, and operational visibility.
 
 ## Access
 
 | Item | Value |
 |---|---|
 | Host | UbuntuServer1 |
-| Port | 3000 |
+| URL | http://10.0.0.42:3000 |
+
+## Datasources
+
+- Prometheus (default — infrastructure metrics)
+- Loki (×2 — system logs and NetFlow/IDS logs)
 
 ---
 
@@ -86,11 +85,7 @@ Grafana provides:
 
 ## Purpose
 
-Prometheus collects:
-- infrastructure metrics
-- node metrics
-- VM performance data
-- exporter data
+Prometheus collects infrastructure metrics via node_exporter from all monitored hosts.
 
 ## Monitored Systems
 
@@ -106,16 +101,14 @@ Prometheus collects:
 - CPU usage
 - RAM usage
 - filesystem usage
-- uptime
-- load averages
+- uptime and load averages
 - network statistics
 
 ## Access
 
 | Item | Value |
 |---|---|
-| Host | UbuntuServer1 |
-| Port | 9090 |
+| URL | http://10.0.0.42:9090 |
 
 ---
 
@@ -123,46 +116,59 @@ Prometheus collects:
 
 ## Purpose
 
-Loki provides:
-- centralized logging
-- log aggregation
-- searchable infrastructure logs
+Loki aggregates logs from across the infrastructure via Grafana Alloy pipelines.
 
-## Current Logging Sources
+## Log Sources
 
-- Linux system logs
-- service logs
-- infrastructure logs
-- operational troubleshooting logs
-
-## Benefits
-
-- centralized troubleshooting
-- easier issue investigation
-- historical log visibility
-- operational visibility
+- Linux system logs (all VMs)
+- Bettercap IDS logs (Pi → rsync → Alloy → Loki)
+- NetFlow data (softflowd → goflow2 → Alloy → Loki)
+- Service logs
 
 ---
 
-# Wazuh
+# Grafana Alloy
 
 ## Purpose
 
-Wazuh provides:
-- SIEM functionality
-- security monitoring
-- endpoint visibility
-- alerting
-- security event collection
+Grafana Alloy acts as the centralized log and metric pipeline, replacing legacy Promtail deployments.
 
-## Monitored Systems
+## Data Flows
 
-| System | Status |
+| Source | Pipeline |
 |---|---|
-| UbuntuServer1 | Monitored |
-| Proxmox VE Host | Monitored |
-| Windows Server 2025 | Monitored |
-| Additional systems | Expandable |
+| IDS logs (Raspberry Pi) | rsync to UbuntuServer1 → Alloy → Loki |
+| NetFlow | softflowd → goflow2 → Alloy → Loki |
+| System logs | Alloy → Loki |
+
+---
+
+# Wazuh SIEM
+
+## Purpose
+
+Wazuh provides SIEM functionality, endpoint visibility, security event collection, and alerting.
+
+## Access
+
+| Item | Value |
+|---|---|
+| API | https://10.0.0.42:55000 |
+| Dashboard | https://10.0.0.42:443 |
+
+## Monitored Agents (9 active)
+
+| Agent | System |
+|---|---|
+| ubuntuserver1 | UbuntuServer1 (local) |
+| PowerEdge1 | Proxmox VE host |
+| WindowsServer1 | CorpDC |
+| PBS1 | Proxmox Backup Server 1 |
+| AdminLaptop | Admin workstation |
+| raspberrypi-ids | Raspberry Pi IDS |
+| GamingPC | Gaming PC |
+| pbs2 | PBS2 offsite |
+| AI.Assistant | VM 103 |
 
 ## Security Monitoring Areas
 
@@ -173,39 +179,44 @@ Wazuh provides:
 - agent visibility
 - infrastructure monitoring
 
-## Purpose in Homelab
-
-The Wazuh environment is used to learn:
-- SIEM concepts
-- detection engineering
-- log analysis
-- infrastructure monitoring
-- security operations workflows
-
 ---
 
-# goflow2
+# goflow2 — NetFlow Collection
 
 ## Purpose
 
-goflow2 collects:
-- NetFlow traffic data
-- flow visibility
-- traffic analysis metrics
+goflow2 collects NetFlow data sent from softflowd agents running on all hosts.
 
-## Current Configuration
+## Configuration
 
 | Item | Value |
 |---|---|
-| Flow Port | 2055 |
-| Metrics Port | 8080 |
+| Flow input port | 2055 |
+| Metrics port | 8080 |
 
 ## Benefits
 
-- traffic visibility
+- traffic visibility across all hosts
 - bandwidth analysis
 - flow monitoring
-- network usage visibility
+- network usage trends
+
+---
+
+# Netdata
+
+## Purpose
+
+Netdata provides real-time per-node metrics on all infrastructure hosts.
+
+All nodes are claimed to Netdata Cloud for centralized visibility.
+
+## Covered Nodes
+
+- Proxmox VE Host
+- UbuntuServer1
+- PBS1
+- PBS2
 
 ---
 
@@ -213,80 +224,55 @@ goflow2 collects:
 
 ## Purpose
 
-The Raspberry Pi IDS provides:
-- traffic monitoring
-- packet visibility
-- network inspection
-- security experimentation
+The Raspberry Pi IDS (10.0.0.170) provides passive traffic monitoring via Bettercap and switch port mirroring.
 
-## Tools Used
+## Tools
 
-- Bettercap
-- port mirroring
-- DNS inspection
-- traffic analysis
+| Tool | Function |
+|---|---|
+| Bettercap `net.recon` | Host discovery |
+| Bettercap `net.probe` | Active probing |
+| Bettercap `net.sniff` | Packet capture |
 
-## Network Integration
+## Integration
 
-The managed switch mirrors traffic to the Raspberry Pi IDS.
-
-This allows:
-- passive monitoring
-- network visibility
-- traffic analysis
-- IDS experimentation
+Logs are rsynced to UbuntuServer1, ingested by Grafana Alloy, and shipped to Loki for Grafana visualization.
 
 ---
 
-# AI Monitoring Integration
+# AI Monitoring Integration (Hermes-Agent)
 
-The AI Assistant VM integrates monitoring data into Telegram reports.
+Hermes-Agent (Mara) delivers scheduled infrastructure reports to Telegram.
 
-## Current Features
+## Implemented Features
 
 | Feature | Status |
 |---|---|
-| Reachability checks | Implemented |
-| VM status reporting | Implemented |
-| Proxmox API integration | Implemented |
-| Daily reporting | Implemented |
-| Backup reporting | Implemented |
+| Reachability checks (ping) | ✅ Active |
+| VM status and resources (Proxmox API) | ✅ Active |
+| Proxmox node metrics (SSH) | ✅ Active |
+| Backup status (PBS API + PVE tasks) | ✅ Active |
+| PBS datastore usage | ✅ Active |
+| Email monitoring and replies | ✅ Active |
+| Telegram Telegram relay | ✅ Active |
+| Daily reports (8 AM / 8 PM CDT) | ✅ Scheduled |
 
 ## Future Planned Features
 
-- Wazuh alert summaries
-- Grafana metric summaries
-- PBS datastore monitoring
-- offline alerts
-- anomaly detection
-- operational recommendations
+- Wazuh alert summaries in daily reports
+- Grafana anomaly detection integration
+- PBS2 offsite sync status
+- Automated changelog generation
 
 ---
 
-# Operational Visibility Goals
+# Future Monitoring Improvements
 
-The monitoring stack is designed to provide:
+Planned improvements include:
 
-- centralized observability
-- proactive monitoring
-- security visibility
-- performance visibility
-- backup awareness
-- remote operational awareness
-- troubleshooting visibility
-
----
-
-# Future Improvements
-
-Planned future improvements include:
-
-- centralized alerting
-- alert severity classification
-- Discord/Telegram notifications
+- centralized alerting with severity classification
+- Wazuh detection engineering workflows
 - dashboard improvements
-- additional exporters
-- detection engineering workflows
-- IDS rule expansion
-- long-term metric retention
-- automated reporting improvements
+- additional node_exporter coverage
+- long-term metric retention tuning
+- automated anomaly alerting via Telegram
