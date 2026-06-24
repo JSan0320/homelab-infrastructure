@@ -111,13 +111,16 @@ Purpose:
 
 # Protected Systems
 
-| System | Protection Method |
-|---|---|
-| UbuntuServer1 | PBS VM backup |
-| AI Assistant VM | PBS VM backup |
-| CorpDC | Windows System State backup to Samba |
-| Monitoring stack | Included within UbuntuServer1 |
-| Samba shares | Included within UbuntuServer1 backups |
+| System | Protection Method | Backup Schedule |
+|--------|-------------------|-----------------|
+| UbuntuServer1 (VM102) | PBS VM backup | Daily 3:00 AM CST |
+| Hermes-Agent (VM100) | PBS VM backup | Daily 3:30 AM CST |
+| AI Assistant (VM103) | PBS VM backup | Sundays 1:00 AM CST |
+| CorpDC | Windows System State backup to Samba | Manual (VSS) |
+| Monitoring stack | Included within UbuntuServer1 | Daily 3:00 AM CST |
+| Samba shares | Included within UbuntuServer1 backups | Daily 3:00 AM CST |
+
+**Replication to PBS2:** All PBS1 backups replicate to PBS2 (offsite) daily at 4:00 AM CST.
 
 ---
 

@@ -47,12 +47,12 @@ The environment is designed to simulate many small-enterprise infrastructure con
 
 ## Hosted VMs
 
-| VMID | Name | IP | RAM | CPU | Role |
-|---|---|---|---|---|---|
-| 100 | Hermes-Agent | 10.0.0.105 | 8 GB | 2 | AI ops assistant (Mara) |
-| 101 | Windows11Edu | — | 16 GB | 4 | Admin workstation (stopped) |
-| 102 | Ubuntu.Server | 10.0.0.42 | 48 GB | 6 | Core Linux services |
-| 103 | Ai.Assistant | — | 16 GB | 4 | Legacy Telegram bot + Ollama |
+|| VMID | Name | IP | RAM | CPU | Role |
+||---|---|---|---|---|---|
+|| 100 | Hermes-Agent | 10.0.0.105 | 16 GB | 4 | AI ops assistant (Mara) |
+|| 101 | Windows11Edu | — | 16 GB | 4 | Admin workstation (stopped) |
+|| 102 | Ubuntu.Server | 10.0.0.42 | 48 GB | 6 | Core Linux services |
+|| 103 | Ai.Assistant | — | 16 GB | 4 | Legacy Telegram bot + Ollama |
 
 ---
 
@@ -103,18 +103,21 @@ The environment is designed to simulate many small-enterprise infrastructure con
 |---|---|
 | VMID | 100 |
 | IP | 10.0.0.105 |
-| RAM | 8 GB |
-| CPU | 2 cores |
+| RAM | 16 GB |
+| CPU | 4 cores |
 | Platform | Ubuntu (Hermes AI Agent) |
+| **Backup Schedule** | **Daily 3:30 AM CST to PBS1** |
+| **Backup Target** | **PBS1 local + PBS2 offsite replication** |
 
 ## Purpose
 
 Hermes-Agent is the primary AI operations assistant responsible for:
 
-- Scheduled Telegram infrastructure reports (8 AM / 8 PM CDT)
+- Scheduled Telegram infrastructure reports (8 AM / 8 PM CST)
 - Email monitoring and bidirectional communication
 - GitHub documentation maintenance
 - Proxmox API and SSH-based metrics collection
+- Backup verification and health monitoring
 
 See [AI Assistant](ai-assistant.md) for full details.
 
