@@ -175,14 +175,14 @@ Purpose:
 
 | Device | IP |
 |---|---|
-| Xfinity Gateway | 10.0.0.1 |
+| FortiGate 50E | 10.0.0.1 |
+| Xfinity XB7 | Bridge Mode |
 | Enterprise AP | 10.0.0.2 |
 | Proxmox Host | 10.0.0.46 |
 | UbuntuServer1 | 10.0.0.42 |
 | CorpDC | 10.0.0.45 |
 | Hermes-Agent | 10.0.0.105 |
 | PBS1 | 10.0.0.30 |
-| OPNsense | 10.0.0.110 |
 | Pi IDS | 10.0.0.170 |
 | Switch | 10.0.0.254 |
 

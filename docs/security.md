@@ -41,6 +41,7 @@ The lab is designed around several core principles:
 
 | Component | Purpose |
 |---|---|
+| FortiGate 50E | Primary edge firewall and gateway |
 | Wazuh | SIEM and security monitoring |
 | Bettercap IDS | Network traffic visibility |
 | Raspberry Pi IDS | Passive monitoring system |

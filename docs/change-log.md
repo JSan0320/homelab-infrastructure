@@ -4,6 +4,50 @@ This document tracks major infrastructure changes, deployments, upgrades, and ar
 
 ---
 
+# June 28, 2026
+
+### FortiGate 50E Migration — Network Topology Update
+
+Successfully migrated from Xfinity XB7 as primary gateway to FortiGate 50E edge firewall. Updated all documentation to reflect new network topology.
+
+**Network Changes:**
+- Xfinity XB7 now operates in Bridge Mode (cable modem only)
+- FortiGate 50E is primary gateway/firewall at 10.0.0.1
+- FortiGate WAN receives public IP via DHCP from Comcast (currently 107.3.221.153)
+- FortiGate LAN IP: 10.0.0.1/24
+- TP-Link managed switch uplink now connects to FortiGate LAN
+- All homelab devices now behind FortiGate
+- DNS/DHCP delegation remains on CorpDC
+
+**Verification Complete:**
+- Internet connectivity ✅
+- FortiGate management accessible ✅
+- Proxmox operational ✅
+- CorpDC (DHCP/DNS) functional ✅
+- UbuntuServer1 operational ✅
+- All VMs running ✅
+- PBS1 & PBS2 backup connectivity confirmed ✅
+- Tailscale remote access functional ✅
+- SSH connectivity verified ✅
+- Static IP assignments preserved ✅
+
+**Decommissioned:**
+- OPNsense (10.0.0.110) — replaced by FortiGate
+
+**Documentation Updated:**
+- `docs/network-map.md` — Updated topology diagram, removed OPNsense references, added FortiGate as gateway
+- `docs/architecture.md` — Updated infrastructure table, removed OPNsense
+- `docs/servers-and-services.md` — Removed OPNsense section
+- `docs/ai-context.md` — Updated device IPs, removed OPNsense
+- `docs/security.md` — Added FortiGate to security components
+
+**Next Steps (Post-Migration):**
+- Document FortiGate firewall rules and policies as needed
+- Monitor WAN IP changes if required for future reference
+- Consider cloud backup failover (B2) for additional redundancy
+
+---
+
 # June 19 2026
 
 ### Implemented Scheduled Telegram Infrastructure Reporting

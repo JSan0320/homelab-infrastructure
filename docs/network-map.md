@@ -22,14 +22,14 @@ The environment uses a hybrid network design combining:
 
 | Device | IP | Purpose |
 |---|---|---|
-| Xfinity Gateway | 10.0.0.1 | Internet gateway |
+| FortiGate 50E | 10.0.0.1 | Primary edge firewall and gateway |
+| Xfinity XB7 | Bridge Mode | Cable modem (bridge mode only) |
 | Enterprise AP | 10.0.0.2 | Dual SSID wireless (Main + Guest) |
 | Dell Proxmox VE Host | 10.0.0.46 | Primary virtualization host |
 | UbuntuServer1 (VM 102) | 10.0.0.42 | Core Linux services |
 | CorpDC | 10.0.0.45 | Windows Server 2025 — AD, DNS, DHCP |
 | Hermes-Agent / Mara (VM 100) | 10.0.0.105 | Primary AI operations assistant |
 | PBS1 | 10.0.0.30 | Local Proxmox Backup Server |
-| OPNsense | 10.0.0.110 | VPN router / firewall |
 | Raspberry Pi IDS | 10.0.0.170 | Bettercap IDS / traffic monitoring |
 | Managed Switch (IronGateSwitch1) | 10.0.0.254 | Core switch — VLANs, QoS, port mirroring |
 
@@ -132,9 +132,9 @@ Future planned additions:
 ```text
 Internet
    |
-Xfinity Gateway (10.0.0.1)
+Xfinity XB7 (Bridge Mode — Cable Modem)
    |
-OPNsense VPN Router (10.0.0.110)
+FortiGate 50E (10.0.0.1 — Primary Gateway & Firewall)
    |
 TL-SG608E Managed Switch (10.0.0.254)
    |
@@ -150,7 +150,6 @@ TL-SG608E Managed Switch (10.0.0.254)
    |       +---- PBS1 (10.0.0.30)
    |       +---- Raspberry Pi IDS (10.0.0.170)
    |       +---- Enterprise AP (10.0.0.2)
-   |       +---- OPNsense (10.0.0.110)
    |
    +---- VLAN 10 (Guest — port 8)
            |

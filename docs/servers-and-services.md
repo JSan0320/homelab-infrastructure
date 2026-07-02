@@ -259,15 +259,6 @@ The enterprise AP provides:
 
 ---
 
-# OPNsense Firewall / VPN Router
-
-| Item | Details |
-|---|---|
-| IP | 10.0.0.110 |
-| Role | VPN router / firewall |
-
----
-
 # Infrastructure Goals
 
 The environment is designed to provide experience with:

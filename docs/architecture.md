@@ -26,6 +26,7 @@ The environment combines:
 
 | System | IP | Purpose |
 |---|---|---|
+| FortiGate 50E | 10.0.0.1 | Primary edge firewall and gateway |
 | Dell PowerEdge T320 | 10.0.0.46 | Primary Proxmox VE virtualization host |
 | UbuntuServer1 (VM 102) | 10.0.0.42 | Main Linux infrastructure and services VM |
 | Hermes-Agent / Mara (VM 100) | 10.0.0.105 | Primary AI operations assistant |
@@ -37,7 +38,6 @@ The environment combines:
 | Pi-hole | 10.0.0.42 | DNS filtering and visibility |
 | Managed Switch (IronGateSwitch1) | 10.0.0.254 | VLANs, QoS, and port mirroring |
 | Enterprise AP | 10.0.0.2 | Main and guest wireless networks |
-| OPNsense | 10.0.0.110 | VPN router / firewall |
 
 ---
 
