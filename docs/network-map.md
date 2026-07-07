@@ -20,18 +20,18 @@ The environment uses a hybrid network design combining:
 
 # Core Infrastructure IPs
 
-| Device | IP | Purpose |
-|---|---|---|
-| FortiGate 50E | 10.0.0.1 | Primary edge firewall and gateway |
-| Xfinity XB7 | Bridge Mode | Cable modem (bridge mode only) |
-| Enterprise AP | 10.0.0.2 | Dual SSID wireless (Main + Guest) |
-| Dell Proxmox VE Host | 10.0.0.46 | Primary virtualization host |
-| UbuntuServer1 (VM 102) | 10.0.0.42 | Core Linux services |
-| CorpDC | 10.0.0.45 | Windows Server 2025 — AD, DNS, DHCP |
-| Hermes-Agent / Mara (VM 100) | 10.0.0.105 | Primary AI operations assistant |
-| PBS1 | 10.0.0.30 | Local Proxmox Backup Server |
-| Raspberry Pi IDS | 10.0.0.170 | Bettercap IDS / traffic monitoring |
-| Managed Switch (IronGateSwitch1) | 10.0.0.254 | Core switch — VLANs, QoS, port mirroring |
+|| Device | IP | Purpose |
+||---|---|---|
+|| FortiGate 50E | 10.0.0.1 | Primary edge firewall, gateway, and wireless controller |
+|| Xfinity XB7 | Bridge Mode | Cable modem (bridge mode only) |
+|| Dell Proxmox VE Host | 10.0.0.46 | Primary virtualization host |
+|| UbuntuServer1 (VM 102) | 10.0.0.42 | Core Linux services |
+|| CorpDC | 10.0.0.45 | Windows Server 2025 — AD, DNS, DHCP |
+|| Hermes-Agent / Mara (VM 100) | 10.0.0.105 | Primary AI operations assistant |
+|| PBS1 | 10.0.0.30 | Local Proxmox Backup Server |
+|| Raspberry Pi IDS | 10.0.0.170 | Bettercap IDS / traffic monitoring |
+|| Managed Switch (IronGateSwitch1) | 10.0.0.254 | Core switch — VLANs, QoS, port mirroring |
+|| Beelink Mini S | 10.0.50.x | Dedicated honeypot server (Ubuntu Server) |
 
 ---
 
@@ -55,12 +55,28 @@ The environment uses a hybrid network design combining:
 
 # Wireless Infrastructure
 
-## Enterprise Access Point — 10.0.0.2
+## FortiGate 50E Managed SSIDs
 
-| SSID | VLAN | Access |
-|---|---|---|
-| Main (internal) | VLAN 1 | Full LAN access |
-| Guest | VLAN 10 | Internet only, isolated from LAN |
+The FortiWiFi 50E serves as the primary edge firewall and wireless controller, managing six segmented SSIDs with complete network isolation.
+
+|| SSID | Network | Purpose | Access |
+||---|---|---|---|
+|| INFRA-PROD-NET | 10.0.0.0/24 | Primary infrastructure Wi-Fi | Full LAN access |
+|| IoT_Devices | 10.0.20.0/24 | Smart home / IoT | Isolated, limited services |
+|| Camera_Devices | 10.0.30.0/24 | Security cameras | Isolated, limited services |
+|| Media_Devices | 10.0.40.0/24 | TVs, streaming devices | Isolated, limited services |
+|| Servers | 10.0.50.0/24 | Honeypot / Security Lab | Isolated from production |
+|| Guest_Devices | 10.0.60.0/24 | Guest Wi-Fi | Internet only, no LAN access |
+
+The FortiGate handles all network services:
+- DHCP allocation for each SSID
+- Wireless SSID management
+- VLAN / network segmentation
+- Inter-network firewall policies
+- Internet gateway
+- Network security and filtering
+
+**Network Isolation:** Production homelab infrastructure remains on 10.0.0.0/24 to avoid changing existing IP addresses. Each SSID is on a dedicated subnet with firewall policies restricting inter-network traffic.
 
 ---
 
@@ -134,11 +150,11 @@ Internet
    |
 Xfinity XB7 (Bridge Mode — Cable Modem)
    |
-FortiGate 50E (10.0.0.1 — Primary Gateway & Firewall)
+FortiGate 50E (10.0.0.1 — Primary Gateway, Firewall & Wireless Controller)
    |
-TL-SG608E Managed Switch (10.0.0.254)
-   |
-   +---- VLAN 1 (Internal LAN 10.0.0.0/24)
+   +---- INFRA-PROD-NET (10.0.0.0/24)
+   |       |\
+   |       +---- TL-SG608E Managed Switch (10.0.0.254)
    |       |
    |       +---- Dell Proxmox VE (10.0.0.46)
    |       |       +---- VM 100: Hermes-Agent/Mara (10.0.0.105)
@@ -149,11 +165,21 @@ TL-SG608E Managed Switch (10.0.0.254)
    |       +---- CorpDC (10.0.0.45)
    |       +---- PBS1 (10.0.0.30)
    |       +---- Raspberry Pi IDS (10.0.0.170)
-   |       +---- Enterprise AP (10.0.0.2)
    |
-   +---- VLAN 10 (Guest — port 8)
-           |
-           +---- Guest wireless clients (isolated)
+   +---- IoT_Devices (10.0.20.0/24) — Smart home devices
+   |
+   +---- Camera_Devices (10.0.30.0/24) — Security cameras
+   |
+   +---- Media_Devices (10.0.40.0/24) — Streaming devices
+   |
+   +---- Servers / Honeypot (10.0.50.0/24) — Isolated threat collection
+   |       |
+   |       +---- Beelink Mini S (Ubuntu Server)
+   |               +---- Cowrie (SSH honeypot)
+   |               +---- OpenCanary (multi-service deception)
+   |               +---- Wazuh Agent (monitoring)
+   |
+   +---- Guest_Devices (10.0.60.0/24) — Guest Wi-Fi (Internet only)
 
 Backup Network (192.168.50.0/24) — isolated NIC-to-NIC
    +---- Proxmox (192.168.50.1) <---> PBS1 (192.168.50.2)

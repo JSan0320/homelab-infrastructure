@@ -24,20 +24,20 @@ The environment combines:
 
 # Core Infrastructure
 
-| System | IP | Purpose |
-|---|---|---|
-| FortiGate 50E | 10.0.0.1 | Primary edge firewall and gateway |
-| Dell PowerEdge T320 | 10.0.0.46 | Primary Proxmox VE virtualization host |
-| UbuntuServer1 (VM 102) | 10.0.0.42 | Main Linux infrastructure and services VM |
-| Hermes-Agent / Mara (VM 100) | 10.0.0.105 | Primary AI operations assistant |
-| Ai.Assistant (VM 103) | — | Legacy Telegram bot + Ollama LLM |
-| Windows Server 2025 (CorpDC) | 10.0.0.45 | Active Directory, DNS, DHCP, and Group Policy |
-| PBS1 | 10.0.0.30 | Local Proxmox Backup Server |
-| PBS2 | Tailscale | Offsite Proxmox Backup Server |
-| Raspberry Pi IDS | 10.0.0.170 | Traffic monitoring and IDS |
-| Pi-hole | 10.0.0.42 | DNS filtering and visibility |
-| Managed Switch (IronGateSwitch1) | 10.0.0.254 | VLANs, QoS, and port mirroring |
-| Enterprise AP | 10.0.0.2 | Main and guest wireless networks |
+|| System | IP | Purpose |
+||---|---|---|
+|| FortiGate 50E | 10.0.0.1 | Primary edge firewall, gateway, and wireless controller |
+|| Dell PowerEdge T320 | 10.0.0.46 | Primary Proxmox VE virtualization host |
+|| UbuntuServer1 (VM 102) | 10.0.0.42 | Main Linux infrastructure and services VM |
+|| Hermes-Agent / Mara (VM 100) | 10.0.0.105 | Primary AI operations assistant |
+|| Ai.Assistant (VM 103) | — | Legacy Telegram bot + Ollama LLM |
+|| Windows Server 2025 (CorpDC) | 10.0.0.45 | Active Directory, DNS, DHCP, and Group Policy |
+|| PBS1 | 10.0.0.30 | Local Proxmox Backup Server |
+|| PBS2 | Tailscale | Offsite Proxmox Backup Server |
+|| Raspberry Pi IDS | 10.0.0.170 | Traffic monitoring and IDS |
+|| Pi-hole | 10.0.0.42 | DNS filtering and visibility |
+|| Managed Switch (IronGateSwitch1) | 10.0.0.254 | VLANs, QoS, and port mirroring |
+|| Beelink Mini S | 10.0.50.x | Dedicated honeypot server (Cowrie + OpenCanary) |
 
 ---
 
@@ -46,65 +46,49 @@ The environment combines:
 ```text
 Clients / Lab Devices
         |
-TL-SG608E Managed Switch + Enterprise AP
+TL-SG608E Managed Switch + FortiGate 50E Wireless Controller
         |
-Core LAN / VLANs (10.0.0.0/24)
+FortiGate 50E (10.0.0.1) — Primary Gateway, Firewall & Wireless Management
         |
-+---------------------------+
-|  Proxmox VE Host          |
-|  Dell PowerEdge T320      |
-|  10.0.0.46                |
-+---------------------------+
+        +---- INFRA-PROD-NET (10.0.0.0/24)
+        |       |
+        |       +---- Dell PowerEdge T320 (10.0.0.46)
+        |       |       +---- VM 100: Hermes-Agent / Mara (10.0.0.105)
+        |       |       +---- VM 102: UbuntuServer1 (10.0.0.42)
+        |       |       +---- VM 103: Ai.Assistant
+        |       |
+        |       +---- CorpDC (10.0.0.45)
+        |       +---- PBS1 (10.0.0.30)
+        |       +---- Raspberry Pi IDS (10.0.0.170)
         |
-        +---- VM 100: Hermes-Agent / Mara (10.0.0.105)
-        |       - Scheduled Telegram reports (8 AM / 8 PM CDT)
-        |       - Email monitoring and replies
-        |       - GitHub documentation maintenance
-        |       - Proxmox API + SSH metrics collection
+        +---- IoT_Devices (10.0.20.0/24)
         |
-        +---- VM 102: UbuntuServer1 (10.0.0.42)
-        |       - Samba (network shares)
-        |       - Grafana / Prometheus / Loki
-        |       - Grafana Alloy (log/metric pipeline)
-        |       - Wazuh (SIEM)
-        |       - goflow2 (NetFlow)
-        |       - Jellyfin / Plex
-        |       - Webmin / Homarr / Pi-hole
+        +---- Camera_Devices (10.0.30.0/24)
         |
-        +---- VM 103: Ai.Assistant (legacy)
-                - Ollama (qwen2.5:1.5b)
-                - Python Telegram Bot
-                - /status, /vms, /checkbackups
+        +---- Media_Devices (10.0.40.0/24)
+        |
+        +---- Servers / Honeypot (10.0.50.0/24)
+        |       |
+        |       +---- Beelink Mini S (Ubuntu Server)
+        |               +---- Cowrie SSH Honeypot
+        |               +---- OpenCanary Services
+        |               +---- Wazuh Agent
+        |
+        +---- Guest_Devices (10.0.60.0/24)
 
-+---------------------------+
-|  Windows Server 2025      |
-|  CorpDC (physical)        |
-|  10.0.0.45                |
-+---------------------------+
+Backup Network (192.168.50.0/24)
         |
-        - Active Directory (corp.local)
-        - DNS
-        - DHCP
-        - Group Policy
-        - Windows Admin Center
+        +---- Dell PowerEdge (192.168.50.1) ←→ PBS1 (192.168.50.2)
 
-+---------------------------+
-|  PBS1                     |
-|  Local Backup Server      |
-|  10.0.0.30                |
-+---------------------------+
+Wazuh Security Monitoring
         |
-        +---- Dedicated backup NIC (192.168.50.0/24)
-        +---- Offsite Sync (Tailscale) ---- PBS2 (100.98.162.11)
-
-+---------------------------+
-|  Raspberry Pi IDS         |
-|  10.0.0.170               |
-+---------------------------+
+        +---- Wazuh Manager (UbuntuServer1)
+        +---- Wazuh Agents (multiple systems)
+        |       +---- UbuntuServer1
+        |       +---- CorpDC
+        |       +---- Beelink Mini S (Cowrie + OpenCanary)
         |
-        - Bettercap (net.recon, net.probe, net.sniff)
-        - Port mirror from switch port 3
-        - Logs → UbuntuServer1 → Alloy → Loki → Grafana
+        +---- Wazuh Dashboard (Grafana integration)
 ```
 
 ---

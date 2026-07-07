@@ -4,6 +4,86 @@ This document tracks major infrastructure changes, deployments, upgrades, and ar
 
 ---
 
+# July 7, 2026
+
+## Honeypot Environment Deployment — Complete Isolation
+
+Successfully deployed a dedicated, internet-facing honeypot environment to safely collect attack traffic without exposing production systems.
+
+**Honeypot Architecture:**
+- **Network:** `10.0.50.0/24` (completely isolated from production `10.0.0.0/24`)
+- **Hardware:** Beelink Mini S (dedicated physical system, not virtualized)
+- **SSID:** `Servers` (managed by FortiGate 50E)
+- **Services:**
+  - Cowrie SSH honeypot (port 2222) — fake shell, command logging, malware capture
+  - OpenCanary multi-service honeypot (FTP, HTTP, Telnet, MySQL, Redis, MSSQL)
+  - Wazuh agent for centralized monitoring
+
+**Security Isolation:**
+- Network isolation: honeypot subnet cannot access production
+- Firewall policies: FortiGate blocks all inbound from honeypot to production
+- Hardware isolation: dedicated physical system (no hypervisor risk)
+- Service isolation: Cowrie/OpenCanary are completely contained
+- System isolation: UFW allows only honeypot ports; no system shell access
+
+**Wazuh Integration:**
+- Cowrie events monitored in real-time
+- OpenCanary service probes captured and logged
+- Custom alert rules for attack detection
+- Real-time visibility in Wazuh dashboard
+- Full attack session recording and replay
+
+**Verification Complete:**
+- ✓ Cowrie receives real internet attackers
+- ✓ Attack sessions appear in Wazuh immediately
+- ✓ Credentials and commands recorded and visible
+- ✓ SSH fingerprints captured
+- ✓ OpenCanary services appear open during Nmap scans
+- ✓ Service persists through reboot
+- ✓ Wazuh dashboard displays live activity
+
+**Documentation Updated:**
+- Created new `docs/honeypot.md` — Comprehensive honeypot architecture and operations guide
+- Updated `docs/network-map.md` — Added FortiGate SSID table, new network topology with honeypot
+- Updated `docs/architecture.md` — Added honeypot to infrastructure diagram
+- Updated `docs/security.md` — Added honeypot security section and Wazuh integration details
+
+---
+
+# July 7, 2026
+
+## FortiGate Wireless Segmentation — Network Expansion
+
+Successfully migrated wireless network management to FortiGate 50E with complete network segmentation.
+
+**Wireless Network Architecture:**
+- **INFRA-PROD-NET** (10.0.0.0/24) — Primary infrastructure Wi-Fi
+- **IoT_Devices** (10.0.20.0/24) — Smart home / IoT devices
+- **Camera_Devices** (10.0.30.0/24) — Security cameras
+- **Media_Devices** (10.0.40.0/24) — TVs, streaming devices
+- **Servers** (10.0.50.0/24) — Honeypot / Security Lab
+- **Guest_Devices** (10.0.60.0/24) — Guest Wi-Fi (Internet only)
+
+**FortiGate Services:**
+- DHCP allocation per SSID
+- Wireless SSID management
+- VLAN / network segmentation
+- Inter-network firewall policies
+- Internet gateway
+- Network security and filtering
+
+**Network Isolation:**
+- Each SSID on dedicated subnet
+- Firewall policies restrict inter-network traffic
+- Production infrastructure remains on 10.0.0.0/24
+- No IP address changes to existing infrastructure
+
+**Documentation Updated:**
+- `docs/network-map.md` — Updated wireless infrastructure section
+- `docs/architecture.md` — Updated core infrastructure table and topology
+
+---
+
 # June 28, 2026
 
 ### FortiGate 50E Migration — Network Topology Update
