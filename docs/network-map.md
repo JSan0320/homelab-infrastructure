@@ -135,8 +135,8 @@ Logs are synced to UbuntuServer1 → Grafana Alloy → Loki → Grafana dashboar
 
 || Device | Location | IP |
 ||---|---|---
-|| PBS2 | Offsite (parents' house) | 192.168.1.50 (local) / 100.98.162.11 (Tailscale) |
-|| OpenWrt Router | Offsite | Remote routing + Tailscale |
+|| PBS2 | Offsite (parents' house) | 192.168.50.50 (local) / 100.98.162.11 (Tailscale) |
+|| OpenWrt Router | Offsite | 192.168.50.1 |
 
 Future planned additions:
 - Small Proxmox warm-site host for VM restoration

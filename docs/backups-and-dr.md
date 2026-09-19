@@ -84,7 +84,7 @@ This protects:
 ||---|---|
 || Role | Offsite disaster recovery backup server |
 || Hardware | Dell PowerEdge R330 |
-|| Local IP | 192.168.1.50 |
+|| Local IP | 192.168.50.50 |
 || Tailscale IP | 100.98.162.11 |
 || Location | Remote/offsite site (parents' house) |
 || Connectivity | Tailscale mesh + local network SSH access |

@@ -27,7 +27,7 @@ The environment is designed to simulate many small-enterprise infrastructure con
 | Windows11Edu (VM 101) | — | Windows 11 admin workstation (stopped) |
 | Windows Server 2025 (CorpDC) | 10.0.0.45 | Active Directory, DNS, DHCP, Group Policy |
 || PBS1 | 10.0.0.30 | Local Proxmox Backup Server |
-|| PBS2 | 192.168.1.50 (local) / 100.98.162.11 (Tailscale) | Offsite Proxmox Backup Server |
+|| PBS2 | 192.168.50.50 (local) / 100.98.162.11 (Tailscale) | Offsite Proxmox Backup Server |
 | Raspberry Pi IDS | 10.0.0.170 | Network traffic monitoring / Bettercap |
 | Pi-hole | 10.0.0.42 | DNS filtering and visibility |
 
