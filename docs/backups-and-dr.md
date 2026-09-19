@@ -80,12 +80,15 @@ This protects:
 
 ## PBS2
 
-| Item | Details |
-|---|---|
-| Role | Offsite disaster recovery backup server |
-| Location | Remote/offsite site |
-| Connectivity | Tailscale |
-| Purpose | Offsite backup replication |
+|| Item | Details |
+||---|---|
+|| Role | Offsite disaster recovery backup server |
+|| Hardware | Dell PowerEdge R330 |
+|| Local IP | 192.168.1.50 |
+|| Tailscale IP | 100.98.162.11 |
+|| Location | Remote/offsite site (parents' house) |
+|| Connectivity | Tailscale mesh + local network SSH access |
+|| Purpose | Offsite backup replication and DR recovery |
 
 ---
 
