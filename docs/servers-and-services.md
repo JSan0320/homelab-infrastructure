@@ -18,10 +18,11 @@ The environment is designed to simulate many small-enterprise infrastructure con
 
 # Core Infrastructure Systems
 
-| System | IP | Purpose |
-|---|---|---|
-| Dell PowerEdge T320 | 10.0.0.46 | Primary Proxmox VE virtualization host |
-| UbuntuServer1 (VM 102) | 10.0.0.42 | Main Linux infrastructure services VM |
+|| System | IP | Purpose |
+||---|---|---
+|| Dell PowerEdge T320 | 10.0.0.46 | Primary Proxmox VE virtualization host |
+|| Axiomtek NA580 | 10.0.0.107 | Secondary Proxmox host (future REMnux migration target) |
+|| UbuntuServer1 (VM 102) | 10.0.0.42 | Main Linux infrastructure services VM |
 | Hermes-Agent / Mara (VM 100) | 10.0.0.105 | Primary AI operations assistant |
 | Ai.Assistant (VM 103) | — | Legacy Telegram bot + Ollama |
 | Windows11Edu (VM 101) | — | Windows 11 admin workstation (stopped) |
@@ -53,6 +54,33 @@ The environment is designed to simulate many small-enterprise infrastructure con
 || 101 | Windows11Edu | — | 16 GB | 4 | Admin workstation (stopped) |
 || 102 | Ubuntu.Server | 10.0.0.42 | 48 GB | 6 | Core Linux services |
 || 103 | Ai.Assistant | — | 16 GB | 4 | Legacy Telegram bot + Ollama |
+
+---
+
+# Axiomtek NA580
+
+## System Information
+
+|| Item | Details |
+||---|---|
+|| Hardware | Axiomtek NA580 |
+|| Role | Secondary Proxmox host (future REMnux migration target) |
+|| IP (LAN) | 10.0.0.107 |
+|| CPU | 2 cores |
+|| RAM | 4 GB |
+|| Storage | 64 GB |
+|| Status | Planning phase — REMnux VM104 migration target |
+
+## Purpose
+
+The Axiomtek NA580 is planned as a secondary Proxmox host dedicated to malware analysis workloads.
+
+**Future use case:**
+- Migrate REMnux (VM104) from Dell Proxmox to dedicated Axiomtek host
+- Create isolated network path between Axiomtek and Beelink honeypot
+- Eliminate current vmbr2 isolation constraints on primary Proxmox
+
+**Current status:** Equipment verified, IP documented, not yet deployed as Proxmox host.
 
 ---
 
